@@ -150,4 +150,73 @@
                 <tr class="text-sm font-medium hover:bg-slate-50 transition-colors">
                     <td class="px-6 py-4 font-mono text-xs font-bold text-slate-400">#${p.id}</td>
                     <td class="px-6 py-4 text-slate-800 font-bold">${p.name}</td>
-                    <td class="px-6 py-4 text-indigo-600 font-black">$${p
+                    <td class="px-6 py-4 text-indigo-600 font-black">$${p.price.toFixed(2)}</td>
+                    <td class="px-6 py-4 font-mono">${p.stockQuantity}</td>
+                    <td class="px-6 py-4">
+                        <span class="${p.stockQuantity < 15 ? 'bg-rose-50 text-rose-600' : 'bg-emerald-50 text-emerald-600'} px-3 py-1 rounded-full text-[10px] font-black uppercase">
+                            ${p.stockQuantity < 15 ? 'CRITICAL' : 'STABLE'}
+                        </span>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function renderOrders(orders) {
+            document.getElementById('ordersBody').innerHTML = orders.map(o => `
+                <tr>
+                    <td class="px-6 py-4 font-mono font-bold text-slate-300">TRX-${o.id}</td>
+                    <td class="px-6 py-4 font-bold text-slate-700">${o.product?.name || 'Item Out of Stock'}</td>
+                    <td class="px-6 py-4 font-black text-indigo-600">${o.quantity}</td>
+                    <td class="px-6 py-4 uppercase text-[10px] font-black text-slate-400">${o.status}</td>
+                </tr>
+            `).join('');
+        }
+
+        function renderStakeholders(custs, supps) {
+            document.getElementById('suppliersList').innerHTML = supps.map(s => `
+                <div class="flex justify-between items-center p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                    <span class="text-sm font-bold text-slate-700">${s.supplier_name}</span>
+                    <span class="text-[10px] font-mono text-slate-400">${s.contact_email}</span>
+                </div>
+            `).join('');
+
+            document.getElementById('customersList').innerHTML = custs.map(c => `
+                <div class="flex justify-between items-center p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                    <span class="text-sm font-bold text-slate-700">${c.first_name} ${c.last_name}</span>
+                    <span class="text-[10px] font-mono text-slate-400 italic">ID: #${c.id}</span>
+                </div>
+            `).join('');
+        }
+
+        function updateDropdowns(prods, custs) {
+            document.getElementById('orderCustomer').innerHTML = custs.map(c => `<option value="${c.id}">${c.first_name} ${c.last_name}</option>`).join('');
+            document.getElementById('orderProduct').innerHTML = prods.map(p => `<option value="${p.id}">${p.name} ($${p.price})</option>`).join('');
+        }
+
+        async function placeOrder() {
+            const data = {
+                customer: { id: parseInt(document.getElementById('orderCustomer').value) },
+                product: { id: parseInt(document.getElementById('orderProduct').value) },
+                quantity: parseInt(document.getElementById('orderQty').value)
+            };
+
+            const res = await fetch('/api/orders', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': AUTH },
+                body: JSON.stringify(data)
+            });
+
+            if (res.ok) {
+                alert("SUCCESS: Order Processed & Stock Updated!");
+                refreshData();
+            } else {
+                alert("ERROR: Transaction declined (Check stock levels).");
+            }
+        }
+
+        // Auto-refresh every 10 seconds to keep data "Reactive"
+        window.onload = refreshData;
+        setInterval(refreshData, 10000);
+    </script>
+</body>
+</html>
